@@ -1,4 +1,4 @@
-# CHObioreactor
+# Bioreactor
 <p><div class="text-justify">
 This repository contains the Python script, <em>bioreactor.py</em>, that performs the computational model corresponding to the bioreactor of the figure presented in the document <em>bioreactor.pdf</em>.  
   
