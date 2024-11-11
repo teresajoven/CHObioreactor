@@ -4,7 +4,6 @@ This repository contains the Python script, <em>bioreactor.py</em>, that perform
   
 Synthesis reactions from a generic file _reactions.csv_ (for example, for antibodies production) can be added to a model extracted from [BiGG Models], (http://bigg.ucsd.edu/models/) (for instance, *iCHOv1*), which is an open source knowledgebase of genome-scale metabolic models (GEMs). This modified model is converted into a Flexible Net (FN) by utilizing the open-source Python package _fnyzer_ (Flexible Nets analYZER). An FN allows for modeling the multiscale system with the integration of a metabolic network and the dynamics of the bioreactor. Then, adding flux bounds, imposing steady state conditions and introducing an objective function (as maximizing the antibodies production) the problem to be addressed is a linear programming problem (LPP). 
 
-The files <em>heatmap_excel</em> and <em>heatmap_plot</em> enable the visualization of the production on a heatmap.
 
 ### Requirements
 To run the script, it will be necessary to install:
