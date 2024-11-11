@@ -30,5 +30,5 @@ To run the script, it will be necessary to install:
 
 **2.4. Biomass production.**
 
-**2.5. Analyzing the productivity (as antibodies production).**
+**2.5. Computing the productivity (as antibodies production).**
 </div></p>
