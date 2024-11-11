@@ -1,32 +1,28 @@
 # -*- coding: utf-8 -*-
 
-# Functions to compute the maximum productivity of a
-# flexible Net integrating the iCHOv1 metabolic network,
-# IgG antibodies synthesis reaction and bioreactor variables.
+# Functions to compute the maximum productivity of a Flexible Net integrating a metabolic network with synthesis reactions and bioreactor variables.
 
 from __future__ import division, print_function
 import numpy as np
 import cobra
-#from cobra import Reaction, Metabolite
 from fnyzer import FNFactory, cobra2fn
 import pandas as pd
 import numpy as np 
-import matplotlib.pyplot as plt
 
 
 
-def comProductivity(fnet,D,Glc,Gln,Phe,Arg,Asn,Asp,Lys,Met,His,Ile,Leu,Pro,Val,Ser,Thr,Trp,Tyr,X0,Xf,XNsamps,Xint):
+def comProductivity(fnet,D,Glc,X0,Xf,XNsamps,Xint): #concatenate before Glc (glucose) the amino acids present in the medium
  
     
     for X in np.linspace(X0, Xf, XNsamps):
-        genCHOBiorFN(fnet,D,Glc,Gln,Phe,Arg,Asn,Asp,Lys,Met,His,Ile,Leu,Pro,Val,Ser,Thr,Trp,Tyr,Xmin=X0,Xmax=Xf)
+        genCHOBiorFN(fnet,D,Glc,Xmin=X0,Xmax=Xf)
         netobj = FNFactory(fnet) # Build net object
         T=[]
         try:
             netobj.optimize()
             print (f"{netobj.objval:.15f}")
             optX = netobj.places['X'].avm
-            D=dict(glc=Glc,gln=Gln,phe=Phe,arg=Arg,asn=Asn,asp=Asp,lys=Lys,met=Met,his=His,ile=Ile,leu=Leu,pro=Pro,val=Val,ser=Ser,thr=Thr,trp=Trp,tyr=Tyr) 
+            D=dict(glc=Glc)                       #concatenate before Glc (glucose) the amino acids present in the medium
             flux = netobj.trans['taout'].avl
             for i in D:     
               nut_tank =netobj.places[i.upper()].avm
@@ -37,16 +33,13 @@ def comProductivity(fnet,D,Glc,Gln,Phe,Arg,Asn,Asp,Lys,Met,His,Ile,Leu,Pro,Val,S
               print('Flux of '+str(i)+' entering the cell: '+str(nut_incell)+" mM h-1")
               print('Flux of '+str(i)+' leaving through the effluent: '+str(nut_out)+" mM h-1")
               T.append(nut_tank)
-            
-            Ptank = netobj.places['A'].avm
-            print("Antibody concentration:", Ptank)
             print("Flux of iggM1 with X in [",f"{X:.2f}",",",f"{Xf:.2f}","] gDW L-1:", f"{flux:.15f}", "mM h-1")       
         except:
-            print("  Problem NOT feasible") # with X in [", f"{X:.2f}",",", f"{X+Xint:.2f}", "] gdcw L-1")
+            print("  Problem NOT feasible")
             flux=1000
     return flux, T
     
-def loadCHOmodel(filename = "iCHOv1", name = "CHOFN", solver = "cplex"):
+def loadCHOmodel(filename = "iCHOv1", name = "CHOFN", solver = "cplex"): #loading an example of genome-scale metabolic model
    
     model = cobra.io.read_sbml_model(filename+'.xml')
     exch = list(model.exchanges)
@@ -54,8 +47,9 @@ def loadCHOmodel(filename = "iCHOv1", name = "CHOFN", solver = "cplex"):
     for i in exch: 
      if i.lower_bound != 0.0:
           i.lower_bound = -1000
-    # Se añaden los anticuerpos
-    antibody = pd.read_csv("../anticuerpos/added_ab_reactions.csv")
+          
+    # adding syntesis reactions
+    antibody = wpd.read_csv("reactions.csv") #example of antibodies synthesis reactions
     ab_names = ["antiCD20", "iggM1", "iggM2", "iggM3", "mAb", "mAb2"]
     for ab in ab_names:
         reaction = cobra.Reaction(ab)
@@ -77,7 +71,7 @@ def loadCHOmodel(filename = "iCHOv1", name = "CHOFN", solver = "cplex"):
     return fnet
 
 
-def genCHOBiorFN(fnet,D,Glc,Gln,Phe,Arg,Asn,Asp,Lys,Met,His,Ile,Leu,Pro,Val,Ser,Thr,Trp,Tyr,Xmin,Xmax):
+def genCHOBiorFN(fnet,D,Glc,Xmin,Xmax): #concatenate before Glc (glucose) the amino acids present in the medium
     
     ### Bioreactor(tank) concentrations
     fnet['places']['A'] = 0.0
@@ -87,7 +81,7 @@ def genCHOBiorFN(fnet,D,Glc,Gln,Phe,Arg,Asn,Asp,Lys,Met,His,Ile,Leu,Pro,Val,Ser,
     ### Bioreactor reactions (transitions and handlers)
     fnet['shandlers'] = {}
     
-    N=dict(glc=Glc,gln=Gln,phe=Phe,arg=Arg,asn=Asn,asp=Asp,lys=Lys,met=Met,his=His,ile=Ile,leu=Leu,pro=Pro,val=Val,ser=Ser,thr=Thr,trp=Trp,tyr=Tyr) 
+    N=dict(glc=Glc) #concatenate before Glc (glucose) the amino acids present in the medium
     
     for i in N:    
       fnet['places'][i.upper()] = 0.0
@@ -175,7 +169,6 @@ def genCHOBiorFN(fnet,D,Glc,Gln,Phe,Arg,Asn,Asp,Lys,Met,His,Ile,Leu,Pro,Val,Ser,
             'writexls': True,
             }
 
-fnet = loadCHOmodel(filename = "../BIGG/iCHOv1", name = "CHOFN", solver = "cplex")
-comProductivity(fnet,Glc=35.15619796,Gln=7.872825297,Phe=1.275823895,Arg=1.946111508,Asn=5.122945878,Asp=1.354860924,Lys=2.380196919,Met=1.010750472,His=1.216191003,Ile=2.944437965,Leu=3.964891601,Pro=4.621036929,Val=2.946237191,Ser=4.956440488,Thr=2.774941185,Trp=0.926515767,Tyr=0.978250505,X0=1.431,Xf=1.431,XNsamps=1,Xint=1)
-
+fnet = loadCHOmodel(filename = "../BIGG/iCHOv1", name = "CHOFN", solver = "cplex") #take a genome-scale metabolic model of BIGG models
+comProductivity(fnet,D=0.0314,Glc=35.15619796,X0=1.0,Xf=1.0,XNsamps=1,Xint=1): #concatenate before Glc (glucose) the amino acids present in the medium
 
